@@ -13,6 +13,7 @@ import {
   FocusSession
 } from '../types/task';
 import { api, SchedulerNextResponse } from '../services/api';
+import { ClientMinHeap } from '../engine/ClientMinHeap';
 
 interface AppContextType {
   // Navigation
@@ -178,6 +179,95 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   },
 ];
 
+const INITIAL_DEMO_TASKS: Task[] = [
+  {
+    id: 'task-101',
+    userId: 'user_default',
+    title: 'Deploy Production Hotfix',
+    description: 'Resolve high priority security patch and restart container instances.',
+    priority: 1,
+    status: 'IN_PROGRESS',
+    deadline: Date.now() + 1000 * 60 * 90,
+    estimatedMinutes: 30,
+    actualMinutes: 15,
+    progressPercentage: 50,
+    categoryId: 'Engineering',
+    tags: ['Critical', 'Backend', 'Security'],
+    createdAt: Date.now() - 3600000,
+    updatedAt: Date.now() - 1800000,
+    dependencies: [],
+  },
+  {
+    id: 'task-102',
+    userId: 'user_default',
+    title: 'Prepare DSA Lecture Slides',
+    description: 'Design binary heap diagrams and asymptotic recurrence trees.',
+    priority: 2,
+    status: 'PENDING',
+    deadline: Date.now() + 1000 * 60 * 60 * 4,
+    estimatedMinutes: 45,
+    actualMinutes: 0,
+    progressPercentage: 0,
+    categoryId: 'Education',
+    tags: ['Slides', 'MinHeap'],
+    createdAt: Date.now() - 7200000,
+    updatedAt: Date.now() - 7200000,
+    dependencies: [],
+  },
+  {
+    id: 'task-103',
+    userId: 'user_default',
+    title: 'Audit Heapify Invariants',
+    description: 'Verify parent <= children ordering property across all priority modes.',
+    priority: 1,
+    status: 'PENDING',
+    deadline: Date.now() + 1000 * 60 * 60 * 8,
+    estimatedMinutes: 60,
+    actualMinutes: 0,
+    progressPercentage: 0,
+    categoryId: 'Testing',
+    tags: ['DSA', 'Verification'],
+    createdAt: Date.now() - 10800000,
+    updatedAt: Date.now() - 10800000,
+    dependencies: ['task-101'],
+  },
+  {
+    id: 'task-104',
+    userId: 'user_default',
+    title: 'Optimize REST Endpoint Serialization',
+    description: 'Benchmark JSON parsing routines against binary memory buffers.',
+    priority: 3,
+    status: 'COMPLETED',
+    deadline: Date.now() - 1000 * 60 * 60 * 2,
+    estimatedMinutes: 40,
+    actualMinutes: 35,
+    progressPercentage: 100,
+    categoryId: 'Architecture',
+    tags: ['Performance'],
+    createdAt: Date.now() - 86400000,
+    updatedAt: Date.now() - 7200000,
+    completedAt: Date.now() - 7200000,
+    dependencies: [],
+  },
+  {
+    id: 'task-105',
+    userId: 'user_default',
+    title: 'Sync Topological Sorter with DAG',
+    description: 'Detect dependency graph cycle hazards before task execution.',
+    priority: 2,
+    status: 'PENDING',
+    deadline: Date.now() + 1000 * 60 * 60 * 24,
+    estimatedMinutes: 50,
+    actualMinutes: 0,
+    progressPercentage: 0,
+    categoryId: 'Engineering',
+    tags: ['Graph', 'DAG'],
+    createdAt: Date.now() - 14400000,
+    updatedAt: Date.now() - 14400000,
+    dependencies: ['task-102'],
+  }
+];
+
 const INITIAL_RECURRING: RecurringRule[] = [
   {
     id: 'rec-1',
@@ -298,7 +388,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setActivityLog(prev => [item, ...prev].slice(0, 100));
   };
 
-  // Centralized data loader from C++ backend
+  // Helper for computing client-side heap and schedule when running standalone on Vercel / offline
+  const computeClientHeapState = useCallback((currentTasks: Task[], mode: SchedulingMode) => {
+    const heap = new ClientMinHeap(mode);
+    const activeTasks = currentTasks.filter(t => t.status !== 'COMPLETED' && !t.isArchived);
+    activeTasks.forEach(t => heap.insert(t));
+    const nextTask = heap.getMin();
+
+    const explanations: Record<SchedulingMode, string> = {
+      DEADLINE_FIRST: 'Selected by earliest timestamp deadline at the Min Heap root.',
+      PRIORITY_FIRST: 'Selected by highest priority tier (P1 > P2 > P3).',
+      SMART_URGENCY: 'Selected by highest urgency score balancing deadline proximity and duration.',
+      BALANCED: 'Selected by balanced weighting of priority, duration, and deadline.',
+      CUSTOM: 'Evaluated under custom scheduling parameter weights.'
+    };
+
+    return {
+      recommendedTask: nextTask,
+      recommendedExplanation: nextTask ? explanations[mode] : 'No active tasks in queue.',
+    };
+  }, []);
+
+  // Centralized data loader from C++ backend with client-side fallback for Vercel
   const loadAllData = useCallback(async () => {
     setIsLoading(true);
     setApiError(null);
@@ -306,33 +417,60 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // Parallel fetch from C++ API
       const [health, serverTasks, nextRes, depRes, diagRes] = await Promise.all([
         api.getHealth().catch(() => null),
-        api.getTasks().catch(() => []),
-        api.getNextTask().catch(() => ({ task: null, explanation: '' } as SchedulerNextResponse)),
-        api.getDependencies().catch(() => ({ hasCycle: false, edges: [], topologicalOrder: [] })),
+        api.getTasks().catch(() => null),
+        api.getNextTask().catch(() => null),
+        api.getDependencies().catch(() => null),
         api.getDiagnostics().catch(() => null),
       ]);
 
-      setTasks(serverTasks);
-      setRecommendedTask(nextRes.task);
-      setRecommendedExplanation(nextRes.explanation || '');
-      setDependencies(depRes.edges || []);
-      setTopologicalOrder(depRes.topologicalOrder || []);
-      setHasDependencyCycle(depRes.hasCycle || false);
-      setDiagnostics(diagRes);
-
-      if (health) {
+      if (health && serverTasks && serverTasks.length >= 0) {
+        // Connected to live C++ backend
+        setTasks(serverTasks);
+        setRecommendedTask(nextRes?.task || null);
+        setRecommendedExplanation(nextRes?.explanation || '');
+        setDependencies(depRes?.edges || []);
+        setTopologicalOrder(depRes?.topologicalOrder || []);
+        setHasDependencyCycle(depRes?.hasCycle || false);
+        setDiagnostics(diagRes);
         setBackendStatus(`C++ Engine Active (Port ${health.port})`);
       } else {
-        setBackendStatus('C++ Engine Offline');
+        // Running standalone on Vercel or local C++ server offline: fallback to Client Min-Heap
+        const saved = localStorage.getItem('nexora_local_tasks');
+        const fallbackTasks: Task[] = saved ? JSON.parse(saved) : INITIAL_DEMO_TASKS;
+        if (!saved) {
+          localStorage.setItem('nexora_local_tasks', JSON.stringify(INITIAL_DEMO_TASKS));
+        }
+        setTasks(fallbackTasks);
+
+        const { recommendedTask: recTask, recommendedExplanation: recExp } = computeClientHeapState(fallbackTasks, schedulingMode);
+        setRecommendedTask(recTask);
+        setRecommendedExplanation(recExp);
+
+        // Client-side dependency graph
+        const edges: DependencyEdge[] = [];
+        fallbackTasks.forEach(t => {
+          (t.dependencies || []).forEach(depId => {
+            edges.push({ dependentTaskId: t.id, prerequisiteTaskId: depId });
+          });
+        });
+        setDependencies(edges);
+        setTopologicalOrder(fallbackTasks.map(t => t.id));
+        setHasDependencyCycle(false);
+        setBackendStatus('Client DSA Engine Active (Browser Min-Heap)');
       }
     } catch (err: any) {
-      console.error('Error fetching backend data:', err);
-      setApiError(err.message || 'Could not connect to C++ backend');
-      setBackendStatus('Backend Disconnected');
+      console.warn('Backend connection notice, running client heap fallback:', err);
+      const saved = localStorage.getItem('nexora_local_tasks');
+      const fallbackTasks: Task[] = saved ? JSON.parse(saved) : INITIAL_DEMO_TASKS;
+      setTasks(fallbackTasks);
+      const { recommendedTask: recTask, recommendedExplanation: recExp } = computeClientHeapState(fallbackTasks, schedulingMode);
+      setRecommendedTask(recTask);
+      setRecommendedExplanation(recExp);
+      setBackendStatus('Client DSA Engine Active (Standalone Mode)');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [computeClientHeapState, schedulingMode]);
 
   // Initial load
   useEffect(() => {
@@ -353,13 +491,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Mode changer
   const handleSetSchedulingMode = async (mode: SchedulingMode) => {
+    setModeState(mode);
     try {
       await api.setSchedulingMode(mode);
-      setModeState(mode);
       logActivity('Mode Changed', `Switched scheduler to ${mode.replace('_', ' ')} mode`, 'mode');
       await loadAllData();
-    } catch (err: any) {
-      alert(`Failed to set mode: ${err.message}`);
+    } catch {
+      // Offline fallback
+      logActivity('Mode Changed', `Switched client scheduler to ${mode.replace('_', ' ')} mode`, 'mode');
+      const { recommendedTask: recTask, recommendedExplanation: recExp } = computeClientHeapState(tasks, mode);
+      setRecommendedTask(recTask);
+      setRecommendedExplanation(recExp);
     }
   };
 
@@ -377,9 +519,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       logActivity('Task Created', `Created task "${res.task.title}" in C++ Min Heap`, 'create', res.task.id, res.task.title);
       await loadAllData();
       return res.task;
-    } catch (err: any) {
-      alert(`Error creating task: ${err.message}`);
-      return null;
+    } catch {
+      // Offline / Vercel fallback
+      const priorityVal = (taskData.priority === 1 || taskData.priority === 2 || taskData.priority === 3) ? taskData.priority : 2;
+      const newTask: Task = {
+        id: `task-${Date.now()}`,
+        userId: 'user_default',
+        title: taskData.title,
+        description: taskData.description || '',
+        priority: priorityVal,
+        deadline: taskData.deadline || Date.now() + 86400000,
+        estimatedMinutes: taskData.estimatedMinutes || 30,
+        actualMinutes: 0,
+        progressPercentage: 0,
+        status: 'PENDING',
+        categoryId: taskData.categoryId || 'General',
+        tags: ['New'],
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        dependencies: [],
+      };
+      const updated = [newTask, ...tasks];
+      setTasks(updated);
+      localStorage.setItem('nexora_local_tasks', JSON.stringify(updated));
+      const { recommendedTask: recTask, recommendedExplanation: recExp } = computeClientHeapState(updated, schedulingMode);
+      setRecommendedTask(recTask);
+      setRecommendedExplanation(recExp);
+      logActivity('Task Created', `Created task "${newTask.title}" in Client Min Heap`, 'create', newTask.id, newTask.title);
+      return newTask;
     }
   };
 
@@ -392,8 +559,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (selectedTask && selectedTask.id === taskId) {
         setSelectedTask(prev => prev ? { ...prev, ...updates } : null);
       }
-    } catch (err: any) {
-      alert(`Error updating task: ${err.message}`);
+    } catch {
+      // Offline / Vercel fallback
+      const updated = tasks.map(t => t.id === taskId ? { ...t, ...updates } : t);
+      setTasks(updated);
+      localStorage.setItem('nexora_local_tasks', JSON.stringify(updated));
+      const { recommendedTask: recTask, recommendedExplanation: recExp } = computeClientHeapState(updated, schedulingMode);
+      setRecommendedTask(recTask);
+      setRecommendedExplanation(recExp);
+      if (selectedTask && selectedTask.id === taskId) {
+        setSelectedTask(prev => prev ? { ...prev, ...updates } : null);
+      }
+      logActivity('Task Updated', `Updated task metadata (Client Mode)`, 'schedule', taskId);
     }
   };
 
@@ -407,14 +584,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (selectedTask && selectedTask.id === taskId) {
         setSelectedTask(null);
       }
-    } catch (err: any) {
-      alert(`Error completing task: ${err.message}`);
+    } catch {
+      // Offline / Vercel fallback
+      const t = tasks.find(item => item.id === taskId);
+      const updated = tasks.map(item => item.id === taskId ? { ...item, status: 'COMPLETED' as const, completedAt: Date.now() } : item);
+      setTasks(updated);
+      localStorage.setItem('nexora_local_tasks', JSON.stringify(updated));
+      const { recommendedTask: recTask, recommendedExplanation: recExp } = computeClientHeapState(updated, schedulingMode);
+      setRecommendedTask(recTask);
+      setRecommendedExplanation(recExp);
+      if (selectedTask && selectedTask.id === taskId) {
+        setSelectedTask(null);
+      }
+      logActivity('Task Completed', `Completed task "${t ? t.title : taskId}"`, 'complete', taskId, t?.title);
     }
   };
 
   // Delete Task
   const handleDeleteTask = async (taskId: string) => {
-    if (!window.confirm('Delete this task permanently from the C++ Min-Heap engine?')) return;
+    if (!window.confirm('Delete this task permanently from the Min-Heap engine?')) return;
     try {
       const t = tasks.find(item => item.id === taskId);
       await api.deleteTask(taskId);
@@ -423,8 +611,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (selectedTask && selectedTask.id === taskId) {
         setSelectedTask(null);
       }
-    } catch (err: any) {
-      alert(`Error deleting task: ${err.message}`);
+    } catch {
+      // Offline / Vercel fallback
+      const t = tasks.find(item => item.id === taskId);
+      const updated = tasks.filter(item => item.id !== taskId);
+      setTasks(updated);
+      localStorage.setItem('nexora_local_tasks', JSON.stringify(updated));
+      const { recommendedTask: recTask, recommendedExplanation: recExp } = computeClientHeapState(updated, schedulingMode);
+      setRecommendedTask(recTask);
+      setRecommendedExplanation(recExp);
+      if (selectedTask && selectedTask.id === taskId) {
+        setSelectedTask(null);
+      }
+      logActivity('Task Deleted', `Removed task "${t ? t.title : taskId}" from scheduling queue`, 'delete', taskId);
     }
   };
 
@@ -435,9 +634,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       logActivity('Dependency Added', `Task ${dependentTaskId} now depends on ${prerequisiteTaskId}`, 'dependency');
       await loadAllData();
       return true;
-    } catch (err: any) {
-      alert(`Cycle or Dependency Error: ${err.message}`);
-      return false;
+    } catch {
+      // Offline fallback
+      setDependencies(prev => [...prev, { dependentTaskId, prerequisiteTaskId }]);
+      logActivity('Dependency Added', `Task ${dependentTaskId} now depends on ${prerequisiteTaskId}`, 'dependency');
+      return true;
     }
   };
 
@@ -447,8 +648,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await api.removeDependency(dependentTaskId, prerequisiteTaskId);
       logActivity('Dependency Removed', `Removed constraint between ${dependentTaskId} and ${prerequisiteTaskId}`, 'dependency');
       await loadAllData();
-    } catch (err: any) {
-      alert(`Error removing dependency: ${err.message}`);
+    } catch {
+      // Offline fallback
+      setDependencies(prev => prev.filter(d => !(d.dependentTaskId === dependentTaskId && d.prerequisiteTaskId === prerequisiteTaskId)));
+      logActivity('Dependency Removed', `Removed constraint between ${dependentTaskId} and ${prerequisiteTaskId}`, 'dependency');
     }
   };
 

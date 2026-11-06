@@ -1,0 +1,11 @@
+{
+  "name": "nexora-platform",
+  "version": "2.0.0",
+  "private": true,
+  "description": "NEXORA 2.0 Titanium Blue Productivity Suite & C++ DSA Scheduling Engine",
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build",
+    "dev": "cd frontend && npm run dev",
+    "preview": "cd frontend && npm run preview"
+  }
+}
