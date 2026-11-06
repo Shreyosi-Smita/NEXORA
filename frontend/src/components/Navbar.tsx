@@ -1,5 +1,4 @@
 import React from 'react';
-import { useTheme } from '../context/ThemeContext';
 import { Menu, Plus, RefreshCw, Server } from 'lucide-react';
 
 interface NavbarProps {
