@@ -11,19 +11,25 @@ frontend/node_modules/
 dist/
 build/
 frontend/dist/
+backend/build/
 
 # Logs
 *.log
 npm-debug.log*
 
-# Compiled C++ files
+# Compiled C++ files and binaries
 *.exe
 *.obj
 *.o
+*.dSYM/
+backend/nexora_server
+backend/tests/test_dsa
 
-# IDE files
+# IDE and Editor files
 .vscode/
 .idea/
+*.swp
+*.swo
 
 # OS files
 .DS_Store

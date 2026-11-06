@@ -1,57 +1,68 @@
-# NEXORA — Intelligent Task Scheduler & Productivity Platform
+# NEXORA 2.0 — Intelligent Task Scheduler & Productivity Platform
 
 > **Own Your Time.**  
 > *Plan Smarter. Execute Better.*
 
-NEXORA is a high-performance productivity management platform engineered around deadlines, priorities, and custom Data Structures and Algorithms (DSA). Rather than relying on simple to-do lists, NEXORA continuously computes optimal task scheduling using a custom C++ Min Heap engine and directed acyclic graph (DAG) dependency solver.
+NEXORA 2.0 is an enterprise-grade productivity management and scheduling platform engineered around a custom C++ Data Structures & Algorithms (DSA) Min-Heap engine, a directed acyclic graph (DAG) dependency solver with cycle detection, and a modern SaaS interface built with React 18, TypeScript, Tailwind CSS, Recharts, and Framer Motion adhering to the **Titanium Blue 2.0** design standard.
 
 ---
 
 ## 🌟 Key Features
 
 1. **Custom Min-Heap Scheduling Engine (C++)**:
-   - Zero-based vector heap with deterministic tie-breaking:
+   - Zero-based vector heap with deterministic 4-tier tie-breaking:
      `Earliest Deadline` $\rightarrow$ `Highest Priority` $\rightarrow$ `Earlier Creation` $\rightarrow$ `Task ID`.
-   - Dynamic scheduling modes: Deadline-First, Priority-First, Balanced, and Smart Urgency Scoring.
-   - Transparent algorithmic explanations: understand *why* each task is recommended next.
-2. **Interactive Min-Heap Visualization**:
-   - Visual inspection of the live binary tree structure, animated heapify operations, and raw array representations.
-3. **Graph-Based Dependency Management**:
-   - Directed acyclic graph (DAG) model with cycle detection via Depth First Search (DFS) and topological sorting.
-   - Dependency-blocked tasks are automatically shielded from immediate execution.
-4. **Deep Productivity Analytics**:
-   - On-time completion rates, weekly velocity, focus session statistics, and category breakdown powered by Recharts.
-5. **Integrated Focus Mode**:
-   - Pomodoro and custom timers linked directly to active tasks with estimated vs. actual duration auditing.
-6. **Enterprise Architecture**:
-   - Modular C++ backend using Crow REST framework.
-   - Robust PostgreSQL schema with relational integrity and cascade policies.
-   - React 18 + TypeScript + Vite frontend with Tailwind CSS dark-first glassmorphism design.
+   - Dynamic scheduling modes: Deadline-First (EDF), Priority-First (HPF), Balanced, and Smart Urgency Scoring.
+   - Algorithmic explanations: understand *why* each task is recommended next.
+2. **Interactive 3D Animated Landing Page**:
+   - Hardware-accelerated 60fps constellation particle canvas.
+   - Interactive 3D metallic prism hero with mouse parallax tilt.
+   - Live browser-based Min-Heap interactive tree simulator.
+   - Syntax-highlighted C++ systems architecture code viewer with live invariant verification suite.
+   - "Standard To-Do Lists vs NEXORA 2.0" comparison matrix.
+3. **16 Dedicated Productivity Modules**:
+   - **Command Center Dashboard**: 6 KPI cards, Next Move spotlight, Recharts weekly velocity, Today's Agenda, DSA preview.
+   - **My Day**: Hourly time-blocked planning (08:00 to 20:00), daily workload capacity gauge, task allocation.
+   - **All Tasks**: 4 views (List, Grid, Kanban, Table), multi-select bulk actions, filters, search, Task Details drawer.
+   - **Smart Scheduler**: 4 algorithmic modes, weight sliders, live queue diffs, direct C++ mode switching.
+   - **Min Heap Visualizer (DSA Lab)**: Interactive binary tree with SVG parent-child connections, zero-based array layout, step-by-step heapify operations.
+   - **Interactive Calendar**: Month matrix, deadline markers, quick date task creation, date inspection panel.
+   - **Timeline & Gantt Planner**: Sequential Gantt view, duration bars, concurrency planning, overdue warnings.
+   - **Focus Studio**: Circular SVG countdown timer, Pomodoro (25m), short/long breaks, ambient sound toggle, session logging.
+   - **Habits & Goals**: Daily habit streaks with 14-day activity micro-grids, quarterly goals with progress controls.
+   - **Analytics Dashboard**: Recharts velocity charts, priority distribution donut, on-time completion index, JSON report export.
+   - **Dependency Graph (DAG)**: Directed graph solver, cycle detection check, Kahn's topological sort sequence, task blockage tracking.
+   - **Recurring Tasks**: Daily, weekly, monthly automated task templates with active/paused toggle.
+   - **Inbox & Notifications**: Triage inbox, deadline alerts, algorithmic recommendations, unread badge counter.
+   - **Activity History**: Immutable chronological audit trail of all task operations, mode changes, and focus sessions.
+   - **Settings & Integrations**: Profile preferences, working hours, keyboard shortcuts cheat sheet, infrastructure specs.
+   - **System Diagnostics**: Developer telemetry, latency ping benchmark, C++ socket memory model, heap queue metrics.
 
 ---
 
-## 🏗️ Project Architecture
+## 🏗️ Architecture
 
 ```
-                                      +------------------------------------+
-                                      |          USER INTERFACE            |
-                                      |    React 18 + TS + Tailwind CSS    |
-                                      +-----------------+------------------+
-                                                        |
-                                                        | HTTPS / REST / JSON
-                                                        v
-                                      +-----------------+------------------+
-                                      |         C++ CROW BACKEND           |
-                                      |          REST API Engine           |
-                                      +--------+------------------+--------+
-                                               |                  |
-                       +-----------------------+                  +----------------------+
-                       v                                                                 v
+                                  +------------------------------------+
+                                  |          USER INTERFACE            |
+                                  |    React 18 + TS + Tailwind CSS    |
+                                  |    Titanium Blue 2.0 Design System |
+                                  +-----------------+------------------+
+                                                    |
+                                                    | HTTP / REST / JSON (Port 8081)
+                                                    v
+                                  +-----------------+------------------+
+                                  |      C++17 CORE REST ENGINE        |
+                                  |       POSIX / BSD Sockets          |
+                                  +--------+------------------+--------+
+                                           |                  |
+                   +-----------------------+                  +----------------------+
+                   v                                                                 v
 +---------------------------------------+                             +---------------------------------------+
 |             TASK MANAGER              |                             |           SCHEDULING ENGINE           |
-|  - CRUD & Status Lifecycle            |                             |  - Custom Min Heap                    |
-|  - Validation & Isolation             |                             |  - DAG Dependency Manager             |
-|  - Repository Orchestrator            |                             |  - 5 Urgency Evaluation Algorithms    |
+|  - In-Memory Repository               |                             |  - Custom Zero-Based Min Heap         |
+|  - Lifecycle Transitions              |                             |  - DAG Dependency Manager             |
+|  - Validation & Serialization         |                             |  - 3-Color DFS Cycle Detector         |
 +----------------------+----------------+                             +-------------------+-------------------+
                        |                                                                  |
                        +-----------------------+                  +-----------------------+
@@ -64,72 +75,36 @@ NEXORA is a high-performance productivity management platform engineered around 
 
 ---
 
-## 📁 Repository Structure
+## 🚀 Running the Project
 
-```
-project/
-├── backend/
-│   ├── CMakeLists.txt              # C++ CMake project definition
-│   ├── Dockerfile                  # Multi-stage container for deployment
-│   ├── include/
-│   │   ├── dsa/                    # Custom MinHeap, Graph, Comparators
-│   │   ├── managers/               # TaskManager, DependencyManager, Analytics
-│   │   ├── middleware/             # Auth, CORS, Logger
-│   │   ├── models/                 # Task, User, FocusSession, Category
-│   │   ├── repositories/           # Database repositories
-│   │   ├── routes/                 # Crow REST API endpoints
-│   │   └── utils/                  # Date/time, JSON helpers, Enums
-│   ├── src/                        # Implementations and main entry point
-│   └── tests/                      # DSA unit tests & invariant checks
-├── database/
-│   ├── migrations/                 # PostgreSQL schema DDL
-│   └── seeds/                      # Initial seed and sample datasets
-├── frontend/
-│   ├── src/
-│   │   ├── assets/                 # Icons and media
-│   │   ├── components/             # Reusable UI widgets & Heap Visualizer
-│   │   ├── layouts/                # App layout, Navbar, Sidebar
-│   │   ├── pages/                  # Dashboard, Scheduler, Tasks, Focus, Analytics
-│   │   ├── services/               # API client and backend connectors
-│   │   └── types/                  # TypeScript data interfaces
-│   ├── package.json
-│   └── vite.config.ts
-├── docs/                           # Comprehensive DSA, API, and Architecture docs
-├── PROJECT_STATUS.md               # Continuous project progress tracker
-└── README.md
-```
+### Prerequisites
+- Node.js 18+ and npm
+- C++17 compiler (`clang++` or `g++`)
 
----
-
-## 🚀 Getting Started
-
-### Backend Prerequisites
-- CMake 3.16+
-- C++17 compatible compiler (`g++` or `clang++` or MSVC)
-- PostgreSQL client libraries or Supabase instance
-
-### Frontend Prerequisites
-- Node.js 18+
-- npm or pnpm
-
-### Quick Build
+### Starting Services
 ```bash
-# Frontend
+# 1. Compile and run C++ Backend (Port 8081)
+cd backend
+clang++ -std=c++17 -Iinclude src/main.cpp -o nexora_server
+PORT=8081 ./nexora_server
+
+# 2. Run React Frontend (Port 3000)
 cd frontend
 npm install
 npm run dev
-
-# Backend
-cd backend
-mkdir build && cd build
-cmake ..
-cmake --build .
 ```
+
+Visit **http://localhost:3000** to explore the landing page and launch the workspace.
 
 ---
 
-## 📜 Brand Guidelines
-NEXORA enforces a strict brand guideline:
-- Dark-first aesthetic featuring deep obsidian surfaces (`#0B0F17`, `#111827`) with emerald (`#10B981`) and mint (`#34D399`) accents.
-- Modern typography with clean geometric visual cues.
-
+## 📜 Design Standard: Titanium Blue 2.0
+- **Main Background**: `#080D16`
+- **Application Canvas**: `#0C1421`
+- **Primary Surface**: `#131F30`
+- **Elevated Surface**: `#1B2A3D`
+- **Primary Accent**: `#6D9BCB`
+- **Electric Highlight**: `#B5D7F5`
+- **Success / Completed**: `#35D6A1`
+- **Warning**: `#FFBC69`
+- **Error / Overdue**: `#FF6B81`
