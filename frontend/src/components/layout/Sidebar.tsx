@@ -196,11 +196,13 @@ export const Sidebar: React.FC = () => {
           <div className="flex items-center justify-between p-2 rounded-2xl hover:bg-titanium-surface/60 transition-colors cursor-pointer">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-titanium-accent to-titanium-steel flex items-center justify-center font-bold text-xs text-titanium-main shadow-sm">
-                AB
+                NX
               </div>
               <div className="text-left truncate">
-                <p className="text-sm font-bold text-titanium-text truncate">Aarav Bhasin</p>
-                <p className="text-xs text-titanium-text-muted truncate">Product Architect</p>
+                <p className="text-sm font-bold text-titanium-text truncate">
+                  {localStorage.getItem('nexora_user_name') || 'Workspace Member'}
+                </p>
+                <p className="text-xs text-titanium-text-muted truncate">Productivity Workspace</p>
               </div>
             </div>
             <div className="w-2.5 h-2.5 rounded-full bg-semantic-success"></div>
@@ -208,7 +210,7 @@ export const Sidebar: React.FC = () => {
         ) : (
           <div className="flex justify-center">
             <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-titanium-accent to-titanium-steel flex items-center justify-center font-bold text-xs text-titanium-main">
-              AB
+              NX
             </div>
           </div>
         )}

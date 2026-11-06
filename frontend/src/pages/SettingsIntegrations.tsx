@@ -14,14 +14,16 @@ import {
 } from 'lucide-react';
 
 export const SettingsIntegrations: React.FC = () => {
-  const [userName, setUserName] = useState('Aarav Bhasin');
-  const [email, setEmail] = useState('aarav@nexora.io');
+  const [userName, setUserName] = useState(() => localStorage.getItem('nexora_user_name') || 'Workspace Member');
+  const [email, setEmail] = useState(() => localStorage.getItem('nexora_user_email') || 'member@nexora.io');
   const [workingHours, setWorkingHours] = useState('8');
   const [pomodoroLength, setPomodoroLength] = useState('25');
   const [isSaved, setIsSaved] = useState(false);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    localStorage.setItem('nexora_user_name', userName);
+    localStorage.setItem('nexora_user_email', email);
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2000);
   };

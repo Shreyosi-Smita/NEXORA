@@ -92,6 +92,13 @@ export const Dashboard: React.FC = () => {
     return `${days}d left`;
   };
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-200">
       {/* Header Banner */}
@@ -99,7 +106,7 @@ export const Dashboard: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl md:text-3xl font-extrabold text-titanium-text tracking-tight">
-              Good afternoon, <span className="text-titanium-gradient">Aarav</span>
+              {getGreeting()}, <span className="text-titanium-gradient">Welcome to NEXORA</span>
             </h1>
             <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-titanium-surface border border-titanium-border text-titanium-accent">
               {schedulingMode.replace('_', ' ')}
