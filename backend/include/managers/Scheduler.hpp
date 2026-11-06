@@ -102,6 +102,20 @@ public:
         return success;
     }
 
+    bool removeDependency(const std::string& dependentTaskId, const std::string& prerequisiteTaskId) {
+        dependencyManager.removeDependency(dependentTaskId, prerequisiteTaskId);
+        rebuildHeap();
+        return true;
+    }
+
+    const DependencyManager& getDependencyManager() const {
+        return dependencyManager;
+    }
+
+    bool isTaskBlocked(const std::string& taskId) const {
+        return !dependencyManager.isTaskEligible(taskId, completedTaskIds);
+    }
+
     // Retrieves next recommended task — O(1)
     bool getNextTask(Task& outTask) {
         if (heap.isEmpty()) {
