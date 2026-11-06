@@ -98,6 +98,14 @@ Visit **http://localhost:3000** to explore the landing page and launch the works
 
 ---
 
+## 🌐 Deploy to Vercel
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FShreyosi-Smita%2FNEXORA)
+
+NEXORA 2.0 includes automated Vercel deployment presets (`vercel.json`) and an in-browser `ClientMinHeap` fallback engine that supports full interactive scheduling, heap rebalancing, task management, and data persistence out-of-the-box when deployed as a standalone web application.
+
+---
+
 ## 📜 Design Standard: Titanium Blue 2.0
 - **Main Background**: `#080D16`
 - **Application Canvas**: `#0C1421`
